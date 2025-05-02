@@ -101,7 +101,7 @@ class ParallelCopy:
                 try:
                     if (
                         src_path.stat().st_size == dst_path.stat().st_size
-                        and src_path.stat().st_mtime == dst_path.stat().st_mtime
+                        # and src_path.stat().st_mtime == dst_path.stat().st_mtime
                     ):
                         with self.count_lock:
                             print(f"Skipping {src_path} (already exists)")
