@@ -9,6 +9,7 @@ import logging
 import os
 import queue
 import shutil
+import sys
 import threading
 from pathlib import Path
 
@@ -75,9 +76,13 @@ class ParallelCopy:
             src_path = entry
             dst_path = current_dst / entry.name
 
-            if entry.is_dir(follow_symlinks=self.follow_symlinks):
+            if (sys.platform == "win32" and entry.is_dir()) or entry.is_dir(
+                follow_symlinks=self.follow_symlinks
+            ):
                 self.dfs_copy(src_path)
-            elif entry.is_file(follow_symlinks=self.follow_symlinks):
+            elif (sys.platform == "win32" and entry.is_file()) or entry.is_file(
+                follow_symlinks=self.follow_symlinks
+            ):
                 # Submit the copy task to the thread pool
                 log.debug(f"Copying {src_path} to {dst_path}")
                 self.pool.submit(functools.partial(self.copy_file, src_path, dst_path))
@@ -97,6 +102,7 @@ class ParallelCopy:
                         src_path.stat().st_size == dst_path.stat().st_size
                         and src_path.stat().st_mtime == dst_path.stat().st_mtime
                     ):
+                        print(f"\rSkipping {src_path} (already exists)")
                         with self.count_lock:
                             self._skipped_count += 1
                             self._file_count += 1
