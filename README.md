@@ -1,84 +1,64 @@
+# Parallel Copy
 
-# Python Project Template
+[![codecov](https://codecov.io/gh/tanganke/parallel_copy/branch/main/graph/badge.svg?token=parallel_copy_token_here)](https://codecov.io/gh/tanganke/parallel_copy)
+[![CI](https://github.com/tanganke/parallel_copy/actions/workflows/main.yml/badge.svg)](https://github.com/tanganke/parallel_copy/actions/workflows/main.yml)
 
-A low dependency and really simple to start project template for Python Projects.
+A multithreaded file copying utility for efficiently copying large directories and files by leveraging parallel processing.
 
-See also 
-- [Flask-Project-Template](https://github.com/rochacbruno/flask-project-template/) for a full feature Flask project including database, API, admin interface, etc.
-- [FastAPI-Project-Template](https://github.com/rochacbruno/fastapi-project-template/) The base to start an openapi project featuring: SQLModel, Typer, FastAPI, JWT Token Auth, Interactive Shell, Management Commands.
+## Features
 
-### HOW TO USE THIS TEMPLATE
-
-> **DO NOT FORK** this is meant to be used from **[Use this template](https://github.com/rochacbruno/python-project-template/generate)** feature.
-
-1. Click on **[Use this template](https://github.com/rochacbruno/python-project-template/generate)**
-3. Give a name to your project  
-   (e.g. `my_awesome_project` recommendation is to use all lowercase and underscores separation for repo names.)
-3. Wait until the first run of CI finishes  
-   (Github Actions will process the template and commit to your new repo)
-4. If you want [codecov](https://about.codecov.io/sign-up/) Reports and Automatic Release to [PyPI](https://pypi.org)  
-  On the new repository `settings->secrets` add your `PYPI_API_TOKEN` and `CODECOV_TOKEN` (get the tokens on respective websites)
-4. Read the file [CONTRIBUTING.md](CONTRIBUTING.md)
-5. Then clone your new project and happy coding!
-
-> **NOTE**: **WAIT** until first CI run on github actions before cloning your new project.
-
-### What is included on this template?
-
-- 🖼️ Templates for starting multiple application types:
-  * **Basic low dependency** Python program (default) [use this template](https://github.com/rochacbruno/python-project-template/generate)
-  * **Flask** with database, admin interface, restapi and authentication [use this template](https://github.com/rochacbruno/flask-project-template/generate).
-  **or Run `make init` after cloning to generate a new project based on a template.**
-- 📦 A basic [setup.py](setup.py) file to provide installation, packaging and distribution for your project.  
-  Template uses setuptools because it's the de-facto standard for Python packages, you can run `make switch-to-poetry` later if you want.
-- 🤖 A [Makefile](Makefile) with the most useful commands to install, test, lint, format and release your project.
-- 📃 Documentation structure using [mkdocs](http://www.mkdocs.org)
-- 💬 Auto generation of change log using **gitchangelog** to keep a HISTORY.md file automatically based on your commit history on every release.
-- 🐋 A simple [Containerfile](Containerfile) to build a container image for your project.  
-  `Containerfile` is a more open standard for building container images than Dockerfile, you can use buildah or docker with this file.
-- 🧪 Testing structure using [pytest](https://docs.pytest.org/en/latest/)
-- ✅ Code linting using [flake8](https://flake8.pycqa.org/en/latest/)
-- 📊 Code coverage reports using [codecov](https://about.codecov.io/sign-up/)
-- 🛳️ Automatic release to [PyPI](https://pypi.org) using [twine](https://twine.readthedocs.io/en/latest/) and github actions.
-- 🎯 Entry points to execute your program using `python -m <project_name>` or `$ project_name` with basic CLI argument parsing.
-- 🔄 Continuous integration using [Github Actions](.github/workflows/) with jobs to lint, test and release your project on Linux, Mac and Windows environments.
-
-> Curious about architectural decisions on this template? read [ABOUT_THIS_TEMPLATE.md](ABOUT_THIS_TEMPLATE.md)  
-> If you want to contribute to this template please open an [issue](https://github.com/rochacbruno/python-project-template/issues) or fork and send a PULL REQUEST.
-
-[❤️ Sponsor this project](https://github.com/sponsors/rochacbruno/)
-
-<!--  DELETE THE LINES ABOVE THIS AND WRITE YOUR PROJECT README BELOW -->
-
----
-# project_name
-
-[![codecov](https://codecov.io/gh/author_name/project_urlname/branch/main/graph/badge.svg?token=project_urlname_token_here)](https://codecov.io/gh/author_name/project_urlname)
-[![CI](https://github.com/author_name/project_urlname/actions/workflows/main.yml/badge.svg)](https://github.com/author_name/project_urlname/actions/workflows/main.yml)
-
-project_description
+- **Multithreaded copying**: Copy files in parallel to maximize throughput
+- **Progress tracking**: Real-time progress bar showing copy status
+- **File comparison**: Optional shallow comparison to skip identical files
+- **Error handling**: Graceful handling of permissions and other errors
+- **Human-readable output**: File sizes displayed in human-readable format
 
 ## Install it from PyPI
 
 ```bash
-pip install project_name
+pip install parallel_copy
 ```
 
 ## Usage
 
-```py
-from project_name import BaseClass
-from project_name import base_function
-
-BaseClass().base_method()
-base_function()
-```
+### Command Line Interface
 
 ```bash
-$ python -m project_name
-#or
-$ project_name
+# Basic usage
+parallel_copy SOURCE_DIR DESTINATION_DIR
+
+# Use 8 threads for copying
+parallel_copy SOURCE_DIR DESTINATION_DIR -t 8
+
+# Enable shallow comparison to skip identical files
+parallel_copy SOURCE_DIR DESTINATION_DIR --shallow-compare
 ```
+
+### As a Python Library
+
+```python
+from parallel_copy import ParallelCopy
+
+# Initialize with source and destination directories
+copy_task = ParallelCopy(
+    src="/path/to/source",
+    dest="/path/to/destination",
+    threads=4,
+    shallow_compare=True
+)
+
+# Start the copy operation
+copy_task()
+```
+
+## Command Line Options
+
+| Option | Description |
+|--------|-------------|
+| `src` | Source directory (required) |
+| `dest` | Destination directory (required) |
+| `-t, --threads` | Number of threads to use (default: 4) |
+| `--shallow-compare` | Skip copying if destination file exists with same size and modification time |
 
 ## Development
 
