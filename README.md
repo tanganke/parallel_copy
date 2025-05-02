@@ -13,10 +13,10 @@ A multithreaded file copying utility for efficiently copying large directories a
 - **Error handling**: Graceful handling of permissions and other errors
 - **Human-readable output**: File sizes displayed in human-readable format
 
-## Install it from PyPI
+## Install it from Git
 
 ```bash
-pip install parallel_copy
+pip install git+https://git.nas.tanganke.com/tanganke/parallel_copy.git
 ```
 
 ## Usage
