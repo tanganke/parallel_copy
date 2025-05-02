@@ -34,8 +34,8 @@ def read_requirements(path):
 setup(
     name="parallel_copy",
     version=read("parallel_copy", "VERSION"),
-    description="project_description",
-    url="https://github.com/author_name/project_urlname/",
+    description="Awesome parallel_copy created by tanganke",
+    url="https://github.com/tanganke/parallel_copy/",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     author="Anke Tang",

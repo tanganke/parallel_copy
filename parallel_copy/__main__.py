@@ -1,4 +1,4 @@
-"""Entry point for project_name."""
+"""Entry point for parallel_copy."""
 
 from parallel_copy.cli import main  # pragma: no cover
 
