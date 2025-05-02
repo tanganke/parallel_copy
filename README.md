@@ -1,7 +1,7 @@
-# Parallel Copy
-
-[![codecov](https://codecov.io/gh/tanganke/parallel_copy/branch/main/graph/badge.svg?token=parallel_copy_token_here)](https://codecov.io/gh/tanganke/parallel_copy)
-[![CI](https://github.com/tanganke/parallel_copy/actions/workflows/main.yml/badge.svg)](https://github.com/tanganke/parallel_copy/actions/workflows/main.yml)
+<div align="center">
+  <img src="docs/logo.png" alt="Parallel Copy Logo" width="200"/>
+  <h1>Parallel Copy</h1>
+</div>
 
 A multithreaded file copying utility for efficiently copying large directories and files by leveraging parallel processing.
 
