@@ -81,12 +81,14 @@ class ParallelCopy:
             src_path = entry
             dst_path = current_dst / entry.name
 
-            if (sys.platform == "win32" and entry.is_dir()) or entry.is_dir(
-                follow_symlinks=self.follow_symlinks
+            if (sys.platform == "win32" and entry.is_dir()) or (
+                sys.platform != "win32"
+                and entry.is_dir(follow_symlinks=self.follow_symlinks)
             ):
                 self.dfs_copy(src_path)
-            elif (sys.platform == "win32" and entry.is_file()) or entry.is_file(
-                follow_symlinks=self.follow_symlinks
+            elif (sys.platform == "win32" and entry.is_file()) or (
+                sys.platform != "win32"
+                and entry.is_file(follow_symlinks=self.follow_symlinks)
             ):
                 # Submit the copy task to the thread pool
                 log.debug(f"Copying {src_path} to {dst_path}")
@@ -100,7 +102,8 @@ class ParallelCopy:
             if self.shallow_compare:
                 try:
                     if (
-                        src_path.stat().st_size == dst_path.stat().st_size
+                        src_path.stat().st_size
+                        == dst_path.stat().st_size
                         # and src_path.stat().st_mtime == dst_path.stat().st_mtime
                     ):
                         with self.count_lock:
