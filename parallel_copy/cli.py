@@ -5,6 +5,7 @@ CLI interface for parallel_copy project.
 import argparse
 import concurrent.futures
 import functools
+import itertools
 import logging
 import os
 import queue
@@ -17,6 +18,8 @@ from tqdm.auto import tqdm
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+print = tqdm.write
 
 
 def human_readable_size(size: int) -> str:
@@ -66,6 +69,8 @@ class ParallelCopy:
             dynamic_ncols=True,
         )
         self.pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.threads)
+        self._alive_job = 0
+        self.alive_job_lock = threading.Lock()
 
     def dfs_copy(self, current_src: Path):
         rel_path = current_src.relative_to(self.src)
@@ -87,13 +92,9 @@ class ParallelCopy:
                 log.debug(f"Copying {src_path} to {dst_path}")
                 self.pool.submit(functools.partial(self.copy_file, src_path, dst_path))
 
-    def copy_file(self, src_path: Path, dst_path: Path):
+    def _copy_file(self, src_path: Path, dst_path: Path):
         """copy a single file, and update progress bar."""
         assert src_path.is_file(), f"{src_path} is not a file"
-        # sleep 1s
-        import time
-
-        time.sleep(1)
 
         if dst_path.exists() and dst_path.is_file():
             if self.shallow_compare:
@@ -102,8 +103,8 @@ class ParallelCopy:
                         src_path.stat().st_size == dst_path.stat().st_size
                         and src_path.stat().st_mtime == dst_path.stat().st_mtime
                     ):
-                        print(f"\rSkipping {src_path} (already exists)")
                         with self.count_lock:
+                            print(f"Skipping {src_path} (already exists)")
                             self._skipped_count += 1
                             self._file_count += 1
                             self._total_size += src_path.stat().st_size
@@ -114,9 +115,7 @@ class ParallelCopy:
                 except Exception as e:
                     log.error(f"Error comparing files: {e}, skipping.")
         try:
-            print(
-                f"\r{src_path} \tsize: {human_readable_size(src_path.stat().st_size)}"
-            )
+            print(f"{src_path} \tsize: {human_readable_size(src_path.stat().st_size)}")
             shutil.copy2(src_path, dst_path)
         except PermissionError:
             log.error(f"PermissionError: {src_path} or {dst_path}, skipping.")
@@ -127,6 +126,17 @@ class ParallelCopy:
             self._file_count += 1
             self._total_size += src_path.stat().st_size
             self._update_progress_bar()
+
+    def copy_file(self, src_path: Path, dst_path: Path):
+        with self.alive_job_lock:
+            self._alive_job += 1
+            _alive_job = self._alive_job
+        while _alive_job > self.threads:
+            with self.alive_job_lock:
+                _alive_job = self._alive_job
+        self._copy_file(src_path, dst_path)
+        with self.alive_job_lock:
+            self._alive_job -= 1
 
     def _update_progress_bar(self, skip_check=False):
         if skip_check or self._file_count % self._pbar_update_freq == 0:
