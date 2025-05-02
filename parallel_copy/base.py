@@ -13,5 +13,4 @@ If you want to replace this with a Flask application run:
 and then choose `flask` as template.
 """
 
-# example constant variable
-NAME = "project_name"
+NAME = "parallel_copy"

@@ -1,4 +1,4 @@
-from project_name.base import NAME
+from parallel_copy.base import NAME
 
 
 def test_base():
