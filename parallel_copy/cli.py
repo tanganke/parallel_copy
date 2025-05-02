@@ -10,6 +10,7 @@ import logging
 import os
 import queue
 import shutil
+import sqlite3
 import sys
 import threading
 from pathlib import Path
@@ -45,6 +46,7 @@ class ParallelCopy:
         threads: int = 4,
         follow_symlinks: bool = True,
         shallow_compare: bool = False,
+        record_copy: bool = False,
     ):
         self.src = Path(src)
         if not self.src.exists():
@@ -54,6 +56,7 @@ class ParallelCopy:
         self.threads = threads
         self.follow_symlinks = follow_symlinks
         self.shallow_compare = shallow_compare
+        self.record_copy = record_copy
 
         self.count_lock = threading.Lock()
 
@@ -72,10 +75,39 @@ class ParallelCopy:
         self._alive_job = 0
         self.alive_job_lock = threading.Lock()
 
+        if self.record_copy:
+            # Use SQLite database to record copy operations
+            self.db_path = Path("copy_record.db")
+            self.conn = sqlite3.connect(str(self.db_path))
+            self.cursor = self.conn.cursor()
+            # Create table if it doesn't exist
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS copy_records (
+                    source_path TEXT PRIMARY KEY,
+                    dest_path TEXT
+                )
+                """
+            )
+            self.conn.commit()
+
     def dfs_copy(self, current_src: Path):
         rel_path = current_src.relative_to(self.src)
         current_dst = self.dest / rel_path
         current_dst.mkdir(exist_ok=True)
+
+        if self.record_copy:
+            # check if the directory has been copied
+            # Query the database to check if this file has been copied before
+            self.cursor.execute(
+                "SELECT dest_path FROM copy_records WHERE source_path = ?",
+                (str(current_src),),
+            )
+            result = self.cursor.fetchone()
+            # if the dest_path is equal to the current_dst, skip the copy
+            if result and result[0] == str(current_dst):
+                print(f"Skipping Directory {current_src} (already exists in record)")
+                return
 
         for entry in current_src.iterdir():
             src_path = entry
@@ -93,6 +125,17 @@ class ParallelCopy:
                 # Submit the copy task to the thread pool
                 log.debug(f"Copying {src_path} to {dst_path}")
                 self.pool.submit(functools.partial(self.copy_file, src_path, dst_path))
+
+        if self.record_copy:
+            # Record the copy operation if enabled
+            try:
+                self.cursor.execute(
+                    "INSERT INTO copy_records (source_path, dest_path) VALUES (?, ?)",
+                    (str(current_src), str(current_dst)),
+                )
+                self.conn.commit()
+            except Exception as e:
+                log.error(f"Error recording copy operation: {e}")
 
     def _copy_file(self, src_path: Path, dst_path: Path):
         """copy a single file, and update progress bar."""
@@ -160,6 +203,11 @@ class ParallelCopy:
         self.pool.shutdown(wait=True)
         self._progress_bar.close()
 
+        # Close database connection if used
+        if self.record_copy:
+            self.conn.close()
+            print(f"Copy records saved to {self.db_path}")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="parallel_copy CLI")
@@ -173,6 +221,11 @@ def parse_args():
     parser.add_argument(
         "--shallow-compare", action="store_true", help="Use shallow compare"
     )
+    parser.add_argument(
+        "--record-copy",
+        action="store_true",
+        help="Record the copy operation to a file",
+    )
     args = parser.parse_args()
     return args
 
@@ -181,17 +234,6 @@ def main():  # pragma: no cover
     """
     The main function executes on commands:
     `python -m parallel_copy` and `$ parallel_copy `.
-
-    This is your program's entry point.
-
-    You can change this function to do whatever you want.
-    Examples:
-        * Run a test suite
-        * Run a server
-        * Do some other stuff
-        * Run a command line application (Click, Typer, ArgParse)
-        * List all available tasks
-        * Run an application (Flask, FastAPI, Django, etc.)
     """
     args = parse_args()
     program = ParallelCopy(
@@ -199,6 +241,7 @@ def main():  # pragma: no cover
         dest=args.dest,
         threads=args.threads,
         shallow_compare=args.shallow_compare,
+        record_copy=args.record_copy,
     )
     program()
 
